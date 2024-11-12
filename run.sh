@@ -1,14 +1,43 @@
 #!/usr/bin/env bash
+PYTHON_VERSION=3.11
+# Check for required dependencies
+dependencies=("python${PYTHON_VERSION}" "python${PYTHON_VERSION}-venv" "python${PYTHON_VERSION}-dev")
+missing_dependencies=()
 
-sudo apt update
-sudo apt install -y erlang
+dependencies=("python${PYTHON_VERSION}" "python${PYTHON_VERSION}-venv" "python${PYTHON_VERSION}-dev")
+missing_dependencies=()
 
-echo "deb https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/deb/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/rabbitmq-erlang.list
-echo "deb https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/deb/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/rabbitmq-server.list
+for dep in "${dependencies[@]}"; do
+    if ! dpkg -s "$dep" &> /dev/null; then
+        missing_dependencies+=("$dep")
+    fi
+done
 
-curl -fsSL https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.key | sudo apt-key add -
-curl -fsSL https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.key | sudo apt-key add -
+if [ ${#missing_dependencies[@]} -gt 0 ]; then
+    echo "Missing dependencies: ${missing_dependencies[*]}"
+    echo "Please install them using 'sudo apt install ${missing_dependencies[*]}'"
+    exit 1
+fi
 
-sudo apt install -y rabbitmq-server
-sudo systemctl enable rabbitmq-server
-sudo systemctl start rabbitmq-server
+if python$PYTHON_VERSION --version &> /dev/null; then
+    echo "Using Python version: $PYTHON_VERSION"
+    if [ -f .env/ok ]; then
+        source .env/bin/activate
+    else
+        echo "The environment is not ok. Running setup..."
+        rm -rf .env
+        python$PYTHON_VERSION -m venv .env  && \
+        source .env/bin/activate  && \
+        git clone https://github.com/coqui-ai/TTS  && \
+        cd TTS  && \
+        pip install --use-deprecated=legacy-resolver -e .  && \
+        cd .. && \
+        pip install -r requirements.txt && \
+        python -m unidic download
+        touch .env/ok
+    fi
+else
+    echo "Python version $PYTHON_VERSION is not installed. Please install it."
+fi
+
+
