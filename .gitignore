@@ -2,3 +2,4 @@ venv/
 model/
 TTS/
 .env
+outputs
