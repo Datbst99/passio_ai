@@ -1,10 +1,8 @@
 import os
 
-import librosa
-from flask import Flask, request, send_file, jsonify
+from flask import request, send_file, jsonify
 from ..core.TextSpeechService import TextToSpeechService
 from ..config import Config
-import soundfile as sf
 tts = TextToSpeechService()
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)

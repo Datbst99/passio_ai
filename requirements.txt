@@ -6,3 +6,4 @@ cutlet
 unidic
 pydub
 pika
+boto3

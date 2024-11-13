@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from pathlib import Path
 
 import torch
 import torchaudio
@@ -23,8 +24,11 @@ class TextToSpeechService:
         self.checkpoint_dir = checkpoint_dir
         self.repo_id = repo_id
         self.use_deepspeed = use_deepspeed
-        self.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+        current_path = Path(os.path.dirname(os.path.abspath(__file__)))
+        project_dir = current_path.parent.parent
+        self.output_dir = os.path.join(project_dir, "outputs")
         os.makedirs(self.output_dir, exist_ok=True)
+        self.model = self._load_model()
 
     def text_to_speech(self, text, speaker_audio_file):
         if not speaker_audio_file:
@@ -33,10 +37,6 @@ class TextToSpeechService:
         # Chuẩn hóa văn bản
         text = self._normalize_vietnamese_text(text)
 
-        audio = AudioSegment.from_file(speaker_audio_file)
-        print(audio.frame_rate)
-
-        # Trích xuất gpt_cond_latent và speaker_embedding từ âm thanh tham chiếu
         gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
 
         sentences = sent_tokenize(text)
@@ -62,10 +62,7 @@ class TextToSpeechService:
 
             if wav_chunks:
                 # Kết hợp tất cả các đoạn âm thanh lại
-                # out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
                 out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
-                # resampler = torchaudio.transforms.Resample(orig_freq=24000 , new_freq=44100)
-                # out_wav = resampler(out_wav)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
                 torchaudio.save(wav_output_path, out_wav, 24000)
@@ -79,18 +76,7 @@ class TextToSpeechService:
         audio.export(wav_file_path, format="wav")
 
     def upload_and_process_audio(self, filepath, output_dir="/uploads", denoise=True, sample_rate=24000):
-        """
-        Processes an audio file, applies denoising if specified, converts to WAV format, and resamples it.
 
-        Parameters:
-            filepath (str): Path to the input audio file.
-            output_dir (str): Directory to save the processed audio file.
-            denoise (bool): Whether to apply denoising using DeepFilterNet. Default is True.
-            sample_rate (int): Target sample rate for the output WAV file. Default is 22050 Hz.
-
-        Returns:
-            str: Path to the processed audio file.
-        """
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
@@ -150,7 +136,6 @@ class TextToSpeechService:
                             '-loglevel', 'error'])
 
     def _clear_gpu_cache(self):
-        print(torch.cuda.is_available())
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
@@ -158,7 +143,7 @@ class TextToSpeechService:
         self._clear_gpu_cache()
         os.makedirs(self.checkpoint_dir, exist_ok=True)
 
-        required_files = ["model.pth", "config.json", "vocab.json", "speakers_xtts.pth"]
+        required_files = ["model.pth", "config.json", "vocab.json"]
         files_in_dir = os.listdir(self.checkpoint_dir)
         if not all(file in files_in_dir for file in required_files):
             print(f"Thiếu file mô hình! Đang tải...")
@@ -174,8 +159,6 @@ class TextToSpeechService:
 
         if torch.cuda.is_available():
             model.cuda()
-
-        print("Mô hình đã được tải.")
         return model
 
     def _normalize_vietnamese_text(self, text):
@@ -199,8 +182,8 @@ class TextToSpeechService:
     def _extract_latents(self, speaker_audio_file):
         global conditioning_latents_cache
 
-        if not hasattr(self, 'model'):
-            self.model = self._load_model()
+        # if not hasattr(self, 'model'):
+        #     self.model = self._load_model()
 
         cache_key = (
             speaker_audio_file,
@@ -221,17 +204,15 @@ class TextToSpeechService:
             )
             conditioning_latents_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
 
-        # gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
-        #     audio_path=speaker_audio_file,
-        #     gpt_cond_len=self.model.config.gpt_cond_len,
-        #     max_ref_length=self.model.config.max_ref_len,
-        #     sound_norm_refs=self.model.config.sound_norm_refs,
-        # )
         return gpt_cond_latent, speaker_embedding
 
     def _convert_wav_to_mp3(self, wav_file_path):
         mp3_file_path = wav_file_path.replace(".wav", ".mp3")
         audio = AudioSegment.from_wav(wav_file_path)
-        audio.export(mp3_file_path, format="mp3", bitrate="128k")
-        print(f"Đã chuyển đổi âm thanh sang {mp3_file_path}")
+        audio.export(mp3_file_path, format="mp3")
+
+        delete_file = Path(wav_file_path)
+        if delete_file.exists():
+            delete_file.unlink()
+
         return mp3_file_path
