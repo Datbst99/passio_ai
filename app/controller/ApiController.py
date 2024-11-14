@@ -2,7 +2,7 @@ import os
 
 from flask import request, send_file, jsonify
 from ..core.TextSpeechService import TextToSpeechService
-from ..config import Config
+from config.voice import Voice
 tts = TextToSpeechService()
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -18,8 +18,7 @@ class ApiController:
         if not text or text.strip() == "":
             return {"error": "Text is required and cannot be empty"}, 400
 
-
-        audio_file = next((item['audio_file'] for item in Config.VOICE if item['key'] == voice_key), None)
+        audio_file = next((item['audio_file'] for item in Voice.SAMPLE if item['key'] == voice_key), None)
 
         if not text or not audio_file:
             return {"error": "Missing text or invalid voice_key"}, 400

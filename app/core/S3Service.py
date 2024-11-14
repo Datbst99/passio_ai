@@ -15,7 +15,7 @@ class S3Service:
             region_name=Core.AWS_DEFAULT_REGION,
         )
         self.bucket_name = Core.AWS_BUCKET
-        self.public_url = Core.AWS_URL + "/audio_ai"
+        self.public_url = Core.AWS_URL
 
     def upload(self, file_path, file_name = None):
         try:

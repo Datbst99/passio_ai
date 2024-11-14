@@ -44,6 +44,7 @@ class TextToSpeechCommand:
                     'id' : response['id'],
                     'url' : url
                 }
+                print(data)
                 self.channel.queue_declare(queue='passio_ai')
                 self.channel.basic_publish(exchange='', routing_key='passio_ai', body=json.dumps(data))
         except Exception as e:
