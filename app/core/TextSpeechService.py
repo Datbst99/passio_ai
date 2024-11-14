@@ -15,7 +15,7 @@ from underthesea import sent_tokenize
 from vinorm import TTSnorm
 from pydub import AudioSegment
 from df import enhance, init_df
-
+import ffmpeg
 
 conditioning_latents_cache = {}
 
@@ -28,7 +28,6 @@ class TextToSpeechService:
         project_dir = current_path.parent.parent
         self.output_dir = os.path.join(project_dir, "outputs")
         os.makedirs(self.output_dir, exist_ok=True)
-        self.model = self._load_model()
 
     def text_to_speech(self, text, speaker_audio_file):
         if not speaker_audio_file:
@@ -40,7 +39,6 @@ class TextToSpeechService:
         gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
 
         sentences = sent_tokenize(text)
-
         wav_chunks = []
         for sentence in sentences:
             if sentence.strip() == "":
@@ -57,83 +55,56 @@ class TextToSpeechService:
                 top_p=0.85,
                 enable_text_splitting=True,
             )
+
+            keep_len = self._calculate_keep_len(sentence)
+            wav_chunk["wav"] = wav_chunk["wav"][:keep_len]
             wav_chunks.append(torch.tensor(wav_chunk["wav"]))
 
-
-            if wav_chunks:
-                # Kết hợp tất cả các đoạn âm thanh lại
-                out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
-                torchaudio.save(wav_output_path, out_wav, 24000)
-                print(f"Đã lưu âm thanh vào {wav_output_path}")
-                return self._convert_wav_to_mp3(wav_output_path)
-
-            return "Không có âm thanh được tạo ra!", None
+        # Kết hợp tất cả các đoạn âm thanh lại
+        out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
+        torchaudio.save(wav_output_path, out_wav, 24000)
+        print(f"Đã lưu âm thanh vào {wav_output_path}")
+        return wav_output_path
 
     def convert_mp3_wav(self, mp3_file_path, wav_file_path):
         audio = AudioSegment.from_mp3(mp3_file_path)
         audio.export(wav_file_path, format="wav")
 
-    def upload_and_process_audio(self, filepath, output_dir="/uploads", denoise=True, sample_rate=24000):
 
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+    def process_audio(self, filename):
+        subprocess.run(
+            [
+                "deepFilter",
+                filename,
+                "-o",
+                os.path.dirname(filename),
+            ]
+        )
+        wav_path = os.path.splitext(filename)[0] + '.wav'
 
-        # filename = os.path.basename(filepath)
-        output_path = os.path.join(output_dir, "user_sample.wav")
+        ffmpeg.input(filename).output(
+            wav_path,
+            ar=24000,
+            ac=1,
+            ab="384K",
+            format="wav",
+            acodec="pcm_s16le",
+            map_metadata = "-1"
+        ).run()
 
-        try:
-            # Apply denoising if specified
-            if denoise:
-                subprocess.run(["deepFilter", filepath], check=True)
+        return wav_path
 
-                processed_filename = filepath.replace('.wav', '_DeepFilterNet3.wav')
-            else:
-                processed_filename = filepath
 
-            # Convert and resample the audio
-            subprocess.run([
-                "ffmpeg", "-i", processed_filename, "-ac", "1",
-                "-ar", str(sample_rate), "-vn", output_path,
-                "-y", "-hide_banner", "-loglevel", "error"
-            ], check=True)
-
-            # Remove the intermediate processed file if denoise was applied
-            if denoise:
-                os.remove(processed_filename)
-            else:
-                os.remove(filepath)
-
-            print("> Đã tải và xử lý file âm thanh thành công")
-            return output_path
-
-        except subprocess.CalledProcessError as e:
-            print("Error processing audio:", e)
-            return None
-
-    def process_audio(self, filename, denoise=False):
-
-        if denoise:
-            # Run DeepFilterNet denoising process
-            model, df_state, _ = init_df()
-            audio, _ = load_audio(filename, sr=df_state.sr())
-            enhanced = enhance(model, df_state, audio)
-            denoised_filename = filename.replace('.wav', '_DeepFilterNet3.wav')
-            save_audio(denoised_filename, enhanced, df_state.sr())
-            # result = subprocess.run(['deepFilter', filename], check=True)
-            # print(filename, result)
-            # Convert denoised file to mono and resample to 22050 Hz
-
-            subprocess.run(['ffmpeg', '-i', denoised_filename, '-ac', '1', '-ar', '24000', '-vn', filename, '-y', '-hide_banner',
-                 '-loglevel', 'error'])
-            print(denoised_filename)
-            # Remove intermediate denoised file
-            os.remove(denoised_filename)
-        else:
-            # Convert original file to mono and resample to 22050 Hz
-            subprocess.run(['ffmpeg', '-i', filename, '-ac', '1', '-ar', '24000', '-vn', filename, '-y', '-hide_banner',
-                            '-loglevel', 'error'])
+    def _calculate_keep_len(self, text):
+        word_count = len(text.split())
+        num_punct = text.count(".") + text.count("!") + text.count("?") + text.count(",")
+        if word_count < 5:
+            return 15000 * word_count + 2000 * num_punct
+        elif word_count < 10:
+            return 13000 * word_count + 2000 * num_punct
+        return -1
 
     def _clear_gpu_cache(self):
         if torch.cuda.is_available():
@@ -158,6 +129,7 @@ class TextToSpeechService:
         model.load_checkpoint(config, checkpoint_dir=self.checkpoint_dir, use_deepspeed=self.use_deepspeed)
 
         if torch.cuda.is_available():
+            print(torch.cuda.is_available())
             model.cuda()
         return model
 
@@ -166,11 +138,8 @@ class TextToSpeechService:
             TTSnorm(text, unknown=False, lower=False, rule=True)
             .replace("..", ".")
             .replace("!.", "!")
-            .replace("! ", "!")
             .replace("?.", "?")
-            .replace("? ", "?")
             .replace(" .", ".")
-            .replace(". ", ".")
             .replace(" ,", ",")
             .replace('"', "")
             .replace("'", "")
@@ -184,8 +153,8 @@ class TextToSpeechService:
     def _extract_latents(self, speaker_audio_file):
         global conditioning_latents_cache
 
-        # if not hasattr(self, 'model'):
-        #     self.model = self._load_model()
+        if not hasattr(self, 'model'):
+            self.model = self._load_model()
 
         cache_key = (
             speaker_audio_file,
@@ -210,8 +179,20 @@ class TextToSpeechService:
 
     def _convert_wav_to_mp3(self, wav_file_path):
         mp3_file_path = wav_file_path.replace(".wav", ".mp3")
-        audio = AudioSegment.from_wav(wav_file_path)
-        audio.export(mp3_file_path, format="mp3")
+
+        ffmpeg.input(wav_file_path).output(
+            mp3_file_path,
+            ar=44100,  # Sampling rate 44.1 kHz
+            ac=1,
+            ab="128k",
+            format="mp3",
+            acodec="libmp3lame",
+            strict='normal'
+        ).run()
+
+        # mp3_file_path = wav_file_path.replace(".wav", ".mp3")
+        # audio = AudioSegment.from_wav(wav_file_path)
+        # audio.export(mp3_file_path, format="mp3", bitrate="128k", parameters=["-ar", "44100", "-ac", "1"])
 
         delete_file = Path(wav_file_path)
         if delete_file.exists():

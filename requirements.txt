@@ -7,3 +7,4 @@ unidic
 pydub
 pika
 boto3
+deepspeed

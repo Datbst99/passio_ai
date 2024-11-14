@@ -44,5 +44,10 @@ class Voice:
             "key": "eco_voice_15",
             "voice": "Giọng 1",
             "audio_file": "model/samples/nu-nhe-nhang.wav"
+        },
+        {
+            "key": "eco_voice_16",
+            "voice": "Giọng 1",
+            "audio_file": "uploads/response_1.wav"
         }
     ]
