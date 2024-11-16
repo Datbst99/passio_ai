@@ -1,8 +1,9 @@
 import os
 
 from flask import request, send_file, jsonify
-from ..core.TextSpeechService import TextToSpeechService
+from ..core.TextToSpeechService import TextToSpeechService
 from config.voice import Voice
+
 tts = TextToSpeechService()
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -39,15 +40,13 @@ class ApiController:
 
         if file.filename == '':
             return jsonify({"error": "No selected file"}), 400
-
         if file and file.filename.endswith('.mp3'):
-
 
             mp3_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(mp3_path)
             # wav_path = os.path.splitext(mp3_path)[0] + '.wav'
             # tts.convert_mp3_wav(mp3_path, wav_path)
-            wav_path = tts.process_audio(mp3_path)
+            wav_path = tts.predict_speaker(mp3_path)
 
             return jsonify({"message": "File converted successfully", "wav_file": wav_path}), 200
         else:

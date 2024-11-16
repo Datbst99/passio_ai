@@ -48,6 +48,16 @@ class Voice:
         {
             "key": "eco_voice_16",
             "voice": "Giọng 1",
+            "audio_file": "uploads/host_1.wav"
+        },
+        {
+            "key": "eco_voice_17",
+            "voice": "Giọng 1",
             "audio_file": "uploads/response_1.wav"
+        },
+        {
+            "key": "eco_voice_18",
+            "voice": "Giọng 1",
+            "audio_file": "uploads/Minhnv_voice.wav"
         }
     ]
