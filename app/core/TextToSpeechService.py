@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 import torchaudio
-
+from pydub import AudioSegment
 from TTS.TTS.tts.configs.xtts_config import XttsConfig
 from TTS.TTS.tts.models.xtts import Xtts
 from vinorm import TTSnorm
@@ -19,7 +19,7 @@ conditioning_latents_cache = {}
 
 class TextToSpeechService:
 
-    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=True):
+    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=False):
         self.checkpoint_dir = checkpoint_dir
         self.repo_id = repo_id
         self.use_deepspeed = use_deepspeed
@@ -28,7 +28,7 @@ class TextToSpeechService:
         self.output_dir = os.path.join(project_dir, "outputs")
 
 
-    def text_to_speech(self, text, speaker_audio_file):
+    def text_to_speech(self, text, speaker_audio_file, speed):
         if not speaker_audio_file:
             return "Bạn cần cung cấp tệp âm thanh tham chiếu!", None
 
@@ -50,6 +50,7 @@ class TextToSpeechService:
                 top_k=30,
                 top_p=0.85,
                 enable_text_splitting=True,
+                speed=self._adjust_number(speed),
             )
 
             keep_len = self._calculate_keep_len(sentence)
@@ -61,8 +62,7 @@ class TextToSpeechService:
         wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
         torchaudio.save(wav_output_path, out_wav, 24000)
 
-
-        return wav_output_path
+        return self._convert_wav_to_mp3(wav_output_path)
 
 
     def predict_speaker(self, filename):
@@ -167,24 +167,33 @@ class TextToSpeechService:
             torch.cuda.empty_cache()
 
     def _convert_wav_to_mp3(self, wav_file_path):
-        mp3_file_path = wav_file_path.replace(".wav", ".mp3")
-
-        ffmpeg.input(wav_file_path).output(
-            mp3_file_path,
-            ar=44100,  # Sampling rate 44.1 kHz
-            ac=1,
-            ab="338k",
-            format="mp3",
-            acodec="libmp3lame",
-            strict='normal'
-        ).run()
-
         # mp3_file_path = wav_file_path.replace(".wav", ".mp3")
-        # audio = AudioSegment.from_wav(wav_file_path)
-        # audio.export(mp3_file_path, format="mp3", bitrate="128k", parameters=["-ar", "44100", "-ac", "1"])
+        #
+        # ffmpeg.input(wav_file_path).output(
+        #     mp3_file_path,
+        #     ar=44100,  # Sampling rate 44.1 kHz
+        #     ac=1,
+        #     ab="338k",
+        #     format="mp3",
+        #     acodec="libmp3lame",
+        #     strict='normal'
+        # ).run()
+
+        mp3_file_path = wav_file_path.replace(".wav", ".mp3")
+        audio = AudioSegment.from_wav(wav_file_path)
+        audio.export(mp3_file_path, format="mp3", bitrate="128k")
 
         delete_file = Path(wav_file_path)
         if delete_file.exists():
             delete_file.unlink()
 
         return mp3_file_path
+
+    def _adjust_number(self, num):
+        if num is None:
+            return 1
+        elif num < 0.8:
+            return 0.8
+        elif num > 1.5:
+            return 1.5
+        return num

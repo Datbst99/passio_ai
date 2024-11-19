@@ -44,20 +44,21 @@ class Voice:
             "key": "eco_voice_15",
             "voice": "Giọng 1",
             "audio_file": "model/samples/nu-nhe-nhang.wav"
-        },
-        {
-            "key": "eco_voice_16",
-            "voice": "Giọng 1",
-            "audio_file": "uploads/host_1.wav"
-        },
-        {
-            "key": "eco_voice_17",
-            "voice": "Giọng 1",
-            "audio_file": "uploads/response_1.wav"
-        },
-        {
-            "key": "eco_voice_18",
-            "voice": "Giọng 1",
-            "audio_file": "uploads/Minhnv_voice.wav"
         }
     ]
+
+    @classmethod
+    def add_sample(cls, audio_file):
+        max_key = max(
+            int(item["key"].split("_")[-1]) for item in cls.SAMPLE
+        )
+        # Tạo key mới
+        new_key = f"eco_voice_{max_key + 1}"
+        # Thêm mục mới
+        cls.SAMPLE = cls.SAMPLE + [{
+            "key": new_key,
+            "voice": "voice 1",
+            "audio_file": audio_file
+        }]
+
+        return new_key

@@ -146,6 +146,7 @@ class TextToSpeechService:
             .replace("AI", "Ây Ai")
             .replace("A.I", "Ây Ai")
             .replace("KOL", "Cây âu eo")
+            .replace("kol", "Cây âu eo")
         )
         return text
 
@@ -190,9 +191,9 @@ class TextToSpeechService:
             strict='normal'
         ).run()
 
-        # mp3_file_path = wav_file_path.replace(".wav", ".mp3")
-        # audio = AudioSegment.from_wav(wav_file_path)
-        # audio.export(mp3_file_path, format="mp3", bitrate="128k", parameters=["-ar", "44100", "-ac", "1"])
+        mp3_file_path = wav_file_path.replace(".wav", ".mp3")
+        audio = AudioSegment.from_wav(wav_file_path)
+        audio.export(mp3_file_path, format="mp3", bitrate="128k", parameters=["-ar", "44100", "-ac", "1"])
 
         delete_file = Path(wav_file_path)
         if delete_file.exists():

@@ -15,6 +15,7 @@ class ApiController:
         data = request.json
         text = data.get('text')
         voice_key = data.get('voice_key')
+        speed = data.get('speed')
 
         if not text or text.strip() == "":
             return {"error": "Text is required and cannot be empty"}, 400
@@ -24,7 +25,7 @@ class ApiController:
         if not text or not audio_file:
             return {"error": "Missing text or invalid voice_key"}, 400
 
-        output_path = tts.text_to_speech(text, audio_file)
+        output_path = tts.text_to_speech(text, audio_file, speed)
 
         if not os.path.exists(output_path):
             return {"error": "Failed to generate audio"}, 500
@@ -44,11 +45,10 @@ class ApiController:
 
             mp3_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(mp3_path)
-            # wav_path = os.path.splitext(mp3_path)[0] + '.wav'
-            # tts.convert_mp3_wav(mp3_path, wav_path)
             wav_path = tts.predict_speaker(mp3_path)
+            voice_key = Voice.add_sample(wav_path)
 
-            return jsonify({"message": "File converted successfully", "wav_file": wav_path}), 200
+            return jsonify({"message": "File converted successfully", "voice_key": voice_key}), 200
         else:
             return jsonify({"error": "Invalid file type. Please upload an MP3 file."}), 400
 
