@@ -7,3 +7,5 @@ unidic
 pydub
 pika
 boto3
+ffmpeg
+ffmpeg-python

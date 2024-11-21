@@ -21,20 +21,20 @@ fi
 
 if python$PYTHON_VERSION --version &> /dev/null; then
     echo "Using Python version: $PYTHON_VERSION"
-    if [ -f .env/ok ]; then
-        source .env/bin/activate
+    if [ -f vendor/ok ]; then
+        source vendor/bin/activate
     else
         echo "The environment is not ok. Running setup..."
-        rm -rf .env
-        python$PYTHON_VERSION -m venv .env  && \
-        source .env/bin/activate  && \
-        git clone https://github.com/coqui-ai/TTS  && \
+        rm -rf vendor
+        python$PYTHON_VERSION -m venv vendor  && \
+        source vendor/bin/activate  && \
+#        git clone https://github.com/coqui-ai/TTS  && \
         cd TTS  && \
         pip install --use-deprecated=legacy-resolver -e .  && \
         cd .. && \
         pip install -r requirements.txt && \
         python -m unidic download
-        touch .env/ok
+        touch vendor/ok
     fi
 else
     echo "Python version $PYTHON_VERSION is not installed. Please install it."
