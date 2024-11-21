@@ -19,14 +19,14 @@ conditioning_latents_cache = {}
 
 class TextToSpeechService:
 
-    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=False):
+    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=True):
         self.checkpoint_dir = checkpoint_dir
         self.repo_id = repo_id
         self.use_deepspeed = use_deepspeed
         current_path = Path(os.path.dirname(os.path.abspath(__file__)))
         project_dir = current_path.parent.parent
         self.output_dir = os.path.join(project_dir, "outputs")
-
+        self.model = self._load_model()
 
     def text_to_speech(self, text, speaker_audio_file, speed):
         if not speaker_audio_file:
@@ -35,10 +35,12 @@ class TextToSpeechService:
         text = self._normalize_vietnamese_text(text)
         gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
         sentences = sent_tokenize(text)
+
         wav_chunks = []
         for sentence in sentences:
             if sentence.strip() == "":
                 continue
+
             wav_chunk = self.model.inference(
                 text=sentence,
                 language="vi",
@@ -108,7 +110,6 @@ class TextToSpeechService:
         model.load_checkpoint(config, checkpoint_dir=self.checkpoint_dir, use_deepspeed=self.use_deepspeed, eval=True)
 
         if torch.cuda.is_available():
-            print(torch.cuda.is_available())
             model.cuda()
 
         return model
@@ -116,8 +117,6 @@ class TextToSpeechService:
     def _extract_latents(self, speaker_audio_file):
         global conditioning_latents_cache
 
-        if not hasattr(self, 'model'):
-            self.model = self._load_model()
         cache_key = (
             speaker_audio_file,
             self.model.config.gpt_cond_len,
@@ -167,21 +166,21 @@ class TextToSpeechService:
             torch.cuda.empty_cache()
 
     def _convert_wav_to_mp3(self, wav_file_path):
-        # mp3_file_path = wav_file_path.replace(".wav", ".mp3")
-        #
-        # ffmpeg.input(wav_file_path).output(
-        #     mp3_file_path,
-        #     ar=44100,  # Sampling rate 44.1 kHz
-        #     ac=1,
-        #     ab="338k",
-        #     format="mp3",
-        #     acodec="libmp3lame",
-        #     strict='normal'
-        # ).run()
-
         mp3_file_path = wav_file_path.replace(".wav", ".mp3")
-        audio = AudioSegment.from_wav(wav_file_path)
-        audio.export(mp3_file_path, format="mp3", bitrate="128k")
+
+        ffmpeg.input(wav_file_path).output(
+            mp3_file_path,
+            ar=44100,  # Sampling rate 44.1 kHz
+            ac=1,
+            ab="338k",
+            format="mp3",
+            acodec="libmp3lame",
+            strict='normal'
+        ).run()
+
+        # mp3_file_path = wav_file_path.replace(".wav", ".mp3")
+        # audio = AudioSegment.from_wav(wav_file_path)
+        # audio.export(mp3_file_path, format="mp3", bitrate="128k")
 
         delete_file = Path(wav_file_path)
         if delete_file.exists():

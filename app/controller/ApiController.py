@@ -1,10 +1,9 @@
 import os
 
 from flask import request, send_file, jsonify
-from ..core.TextToSpeechService import TextToSpeechService
+from ..core.TTSManager import TTSManager
 from config.voice import Voice
 
-tts = TextToSpeechService()
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -25,6 +24,7 @@ class ApiController:
         if not text or not audio_file:
             return {"error": "Missing text or invalid voice_key"}, 400
 
+        tts = TTSManager.get_tts_service()
         output_path = tts.text_to_speech(text, audio_file, speed)
 
         if not os.path.exists(output_path):
@@ -45,6 +45,8 @@ class ApiController:
 
             mp3_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(mp3_path)
+
+            tts = TTSManager.get_tts_service()
             wav_path = tts.predict_speaker(mp3_path)
             voice_key = Voice.add_sample(wav_path)
 

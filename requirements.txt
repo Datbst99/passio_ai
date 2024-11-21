@@ -10,3 +10,5 @@ torch
 torchvision
 torchaudio
 deepspeed
+ffmpeg
+ffmpeg-python
