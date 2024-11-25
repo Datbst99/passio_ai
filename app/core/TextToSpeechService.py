@@ -2,24 +2,21 @@ import os
 import subprocess
 import torch
 import ffmpeg
-
-from datetime import datetime
-
-from pathlib import Path
-
 import torchaudio
-from pydub import AudioSegment
+
 from TTS.TTS.tts.configs.xtts_config import XttsConfig
 from TTS.TTS.tts.models.xtts import Xtts
 from vinorm import TTSnorm
 from huggingface_hub import snapshot_download
 from underthesea import sent_tokenize
+from datetime import datetime
+from pathlib import Path
 
 conditioning_latents_cache = {}
 
 class TextToSpeechService:
 
-    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=True):
+    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=False):
         self.checkpoint_dir = checkpoint_dir
         self.repo_id = repo_id
         self.use_deepspeed = use_deepspeed
@@ -48,7 +45,7 @@ class TextToSpeechService:
                 speaker_embedding=speaker_embedding,
                 temperature=0.3,
                 length_penalty=1.0,
-                repetition_penalty=10.0,
+                repetition_penalty=8.0,
                 top_k=30,
                 top_p=0.85,
                 enable_text_splitting=True,
@@ -138,18 +135,20 @@ class TextToSpeechService:
         return gpt_cond_latent, speaker_embedding
 
     def _normalize_vietnamese_text(self, text):
+        text = text.replace("%,", "% ,")
         return (
             TTSnorm(text, unknown=False, lower=False, rule=True)
             .replace("..", ".")
-            .replace("!.", "!")
             .replace("?.", "?")
             .replace(" .", ".")
             .replace(" ,", ",")
             .replace('"', "")
             .replace("'", "")
+            .replace("!", "")
             .replace("AI", "Ây Ai")
             .replace("A.I", "Ây Ai")
             .replace("KOL", "Cây âu eo")
+            .replace("kol", "Cây âu eo")
         )
 
     def _calculate_keep_len(self, text):
@@ -172,7 +171,7 @@ class TextToSpeechService:
             mp3_file_path,
             ar=44100,  # Sampling rate 44.1 kHz
             ac=1,
-            ab="338k",
+            ab="128k",
             format="mp3",
             acodec="libmp3lame",
             strict='normal'
@@ -190,7 +189,7 @@ class TextToSpeechService:
 
     def _adjust_number(self, num):
         if num is None:
-            return 1
+            return 1.08
         elif num < 0.8:
             return 0.8
         elif num > 1.5:
