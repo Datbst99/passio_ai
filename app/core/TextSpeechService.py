@@ -39,37 +39,32 @@ class TextToSpeechService:
 
         gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
 
-        sentences = sent_tokenize(text)
 
-        wav_chunks = []
-        for sentence in sentences:
-            if sentence.strip() == "":
-                continue
-            wav_chunk = self.model.inference(
-                text=sentence,
-                language="vi",
-                gpt_cond_latent=gpt_cond_latent,
-                speaker_embedding=speaker_embedding,
-                temperature=0.3,
-                length_penalty=1.0,
-                repetition_penalty=10.0,
-                top_k=30,
-                top_p=0.85,
-                enable_text_splitting=True,
-            )
-            wav_chunks.append(torch.tensor(wav_chunk["wav"]))
+        wav_chunk = self.model.inference(
+            text=text,
+            language="vi",
+            gpt_cond_latent=gpt_cond_latent,
+            speaker_embedding=speaker_embedding,
+            temperature=0.3,
+            length_penalty=1.0,
+            repetition_penalty=10.0,
+            top_k=30,
+            top_p=0.85,
+            enable_text_splitting=True,
+        )
 
+        wav_chunks = [torch.tensor(wav_chunk["wav"])]
 
-            if wav_chunks:
-                # Kết hợp tất cả các đoạn âm thanh lại
-                out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
-                torchaudio.save(wav_output_path, out_wav, 24000)
-                print(f"Đã lưu âm thanh vào {wav_output_path}")
-                return self._convert_wav_to_mp3(wav_output_path)
+        if wav_chunks:
+            # Kết hợp tất cả các đoạn âm thanh lại
+            out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
+            torchaudio.save(wav_output_path, out_wav, 24000)
+            print(f"Đã lưu âm thanh vào {wav_output_path}")
+            return self._convert_wav_to_mp3(wav_output_path)
 
-            return "Không có âm thanh được tạo ra!", None
+        return "Không có âm thanh được tạo ra!", None
 
     def convert_mp3_wav(self, mp3_file_path, wav_file_path):
         audio = AudioSegment.from_mp3(mp3_file_path)
