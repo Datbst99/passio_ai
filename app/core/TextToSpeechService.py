@@ -16,7 +16,7 @@ conditioning_latents_cache = {}
 
 class TextToSpeechService:
 
-    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=False):
+    def __init__(self, checkpoint_dir="model/", repo_id="capleaf/viXTTS", use_deepspeed=True):
         self.checkpoint_dir = checkpoint_dir
         self.repo_id = repo_id
         self.use_deepspeed = use_deepspeed
@@ -31,32 +31,23 @@ class TextToSpeechService:
 
         text = self._normalize_vietnamese_text(text)
         gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
-        sentences = sent_tokenize(text)
+        # sentences = sent_tokenize(text)
 
-        wav_chunks = []
-        for sentence in sentences:
-            if sentence.strip() == "":
-                continue
-
-            wav_chunk = self.model.inference(
-                text=sentence,
+        wav_chunks = self.model.inference(
+                text=text,
                 language="vi",
                 gpt_cond_latent=gpt_cond_latent,
                 speaker_embedding=speaker_embedding,
                 temperature=0.3,
                 length_penalty=1.0,
-                repetition_penalty=8.0,
+                repetition_penalty=10.0,
                 top_k=30,
                 top_p=0.85,
                 enable_text_splitting=True,
                 speed=self._adjust_number(speed),
             )
 
-            keep_len = self._calculate_keep_len(sentence)
-            wav_chunk["wav"] = wav_chunk["wav"][:keep_len]
-            wav_chunks.append(torch.tensor(wav_chunk["wav"]))
-
-        out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0)
+        out_wav = torch.from_numpy(wav_chunks["wav"]).unsqueeze(0)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
         torchaudio.save(wav_output_path, out_wav, 24000)
