@@ -48,7 +48,7 @@ class TextToSpeechService:
             )
 
         out_wav = torch.from_numpy(wav_chunks["wav"]).unsqueeze(0)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = int(datetime.now().timestamp() * 1000)
         wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
         torchaudio.save(wav_output_path, out_wav, 24000)
 
@@ -63,6 +63,11 @@ class TextToSpeechService:
             ]
         )
         wav_path = os.path.splitext(filename)[0] + '.wav'
+
+        removeFile = filename.replace(".mp3", "_DeepFilterNet3.mp3")
+        if os.path.exists(removeFile):
+            os.remove(removeFile)
+
 
         ffmpeg.input(filename).output(
             wav_path,

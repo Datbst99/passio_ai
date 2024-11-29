@@ -1,0 +1,74 @@
+{
+    "eco_voice_07": {
+        "voice_name": "Nam mac dinh",
+        "audio_file": "model/samples/nam-calm.wav"
+    },
+    "eco_voice_08": {
+        "voice_name": "Nam cham",
+        "audio_file": "model/samples/nam-cham.wav"
+    },
+    "eco_voice_09": {
+        "voice_name": "Nam nhanh",
+        "audio_file": "model/samples/nam-nhanh.wav"
+    },
+    "eco_voice_10": {
+        "voice_name": "Nam truyen cam",
+        "audio_file": "model/samples/nam-truyen-cam.wav"
+    },
+    "eco_voice_11": {
+        "voice_name": "Nu mac dinh",
+        "audio_file": "model/samples/nu-calm.wav"
+    },
+    "eco_voice_12": {
+        "voice_name": "Nu cham",
+        "audio_file": "model/samples/nu-cham.wav"
+    },
+    "eco_voice_13": {
+        "voice_name": "Nu lu loat",
+        "audio_file": "model/samples/nu-luu-loat.wav"
+    },
+    "eco_voice_14": {
+        "voice_name": "Nu nhan nha",
+        "audio_file": "model/samples/nu-nhan-nha.wav"
+    },
+    "eco_voice_15": {
+        "voice_name": "Nu nhe nhang",
+        "audio_file": "model/samples/nu-nhe-nhang.wav"
+    },
+    "eco_voice_16": {
+        "voice_name": "Eco nu 1",
+        "audio_file": "uploads/host6.wav"
+    },
+    "eco_voice_17": {
+        "voice_name": "Eco nu 2",
+        "audio_file": "uploads/host11_v2.wav"
+    },
+    "eco_voice_18": {
+        "voice_name": "Eco nu 3",
+        "audio_file": "uploads/host21.wav"
+    },
+    "eco_voice_19": {
+        "voice_name": "Eco nu 4",
+        "audio_file": "uploads/chiLydalie.wav"
+    },
+    "eco_voice_20": {
+        "voice_name": "Eco nu 5",
+        "audio_file": "uploads/ChiLydia.wav"
+    },
+    "eco_voice_21": {
+        "voice_name": "Eco nu 6",
+        "audio_file": "uploads/host15.wav"
+    },
+    "eco_voice_22": {
+        "voice_name": "Giọng 1",
+        "audio_file": "uploads/host_q_eco.wav"
+    },
+    "eco_voice_23": {
+        "voice_name": "1732853511613",
+        "audio_file": "storage/audio_samples/sample_1732853511613.wav"
+    },
+    "eco_voice_24": {
+        "voice_name": "Giong nu quynh hay ho",
+        "audio_file": "storage/audio_samples/sample_1732853537109.wav"
+    }
+}

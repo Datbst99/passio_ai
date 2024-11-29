@@ -1,11 +1,8 @@
 import os
 
 from flask import request, send_file, jsonify
-from ..core.TTSManager import TTSManager
-from config.voice import Voice
-
-UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+from ..core.UploadFileService import upload_voice, get_voice_path
+from ..core.XTTSService import xtts_to_speech
 
 class ApiController:
 
@@ -19,16 +16,17 @@ class ApiController:
         if not text or text.strip() == "":
             return {"error": "Text is required and cannot be empty"}, 400
 
-        audio_file = next((item['audio_file'] for item in Voice.SAMPLE if item['key'] == voice_key), None)
+        audio_file = get_voice_path(voice_key)
 
         if not text or not audio_file:
-            return {"error": "Missing text or invalid voice_key"}, 400
+            return {"error": "Invalid voice_key"}, 400
 
-        tts = TTSManager.get_tts_service()
-        output_path = tts.text_to_speech(text, audio_file, speed)
+        output_path = xtts_to_speech(text, audio_file, speed)
 
         if not os.path.exists(output_path):
             return {"error": "Failed to generate audio"}, 500
+
+        output_path = os.path.abspath(output_path)
 
         return send_file(output_path, mimetype='audio/mpeg')
 
@@ -38,18 +36,13 @@ class ApiController:
             return jsonify({"error": "No file part"}), 400
 
         file = request.files['file']
+        name = request.form.get('name')
 
         if file.filename == '':
             return jsonify({"error": "No selected file"}), 400
+
         if file and file.filename.endswith('.mp3'):
-
-            mp3_path = os.path.join(UPLOAD_FOLDER, file.filename)
-            file.save(mp3_path)
-
-            tts = TTSManager.get_tts_service()
-            wav_path = tts.predict_speaker(mp3_path)
-            voice_key = Voice.add_sample(wav_path)
-
+            voice_key = upload_voice(file, name)
             return jsonify({"message": "File converted successfully", "voice_key": voice_key}), 200
         else:
             return jsonify({"error": "Invalid file type. Please upload an MP3 file."}), 400
