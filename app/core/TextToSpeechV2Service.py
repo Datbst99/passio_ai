@@ -4,8 +4,10 @@ import torch
 import ffmpeg
 import torchaudio
 
-from TTS.TTS.tts.configs.xtts_config import XttsConfig
-from TTS.TTS.tts.models.xtts import Xtts
+from TTS.TTS.tts.configs.tortoise_config import TortoiseConfig
+from TTS.TTS.tts.layers.tortoise import audio_utils
+from TTS.TTS.tts.layers.tortoise.audio_utils import load_voices
+from TTS.TTS.tts.models.tortoise import Tortoise
 from vinorm import TTSnorm
 from huggingface_hub import snapshot_download
 from underthesea import sent_tokenize
@@ -30,29 +32,27 @@ class TextToSpeechService:
             return "Bạn cần cung cấp tệp âm thanh tham chiếu!", None
 
         text = self._normalize_vietnamese_text(text)
-        gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
+        # gpt_cond_latent, speaker_embedding = self._extract_latents(speaker_audio_file)
         # sentences = sent_tokenize(text)
-
+        voice_samples, conditioning_latents = load_voices(['dat'], ["model"])
         wav_chunks = self.model.inference(
                 text=text,
-                language="vi",
-                gpt_cond_latent=gpt_cond_latent,
-                speaker_embedding=speaker_embedding,
+                voice_samples=voice_samples,
+                conditioning_latents=conditioning_latents,
                 temperature=0.3,
                 length_penalty=1.0,
                 repetition_penalty=8.0,
                 top_k=30,
-                top_p=0.85,
-                enable_text_splitting=True,
-                speed=self._adjust_number(speed),
+                top_p=0.85
+
             )
 
-        out_wav = torch.from_numpy(wav_chunks["wav"]).unsqueeze(0)
+        out_wav = torch.cat(wav_chunks["wav"], dim=0).unsqueeze(0)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         wav_output_path = os.path.join(self.output_dir, f"output_{timestamp}.wav")
         torchaudio.save(wav_output_path, out_wav, 24000)
 
-        return self._convert_wav_to_mp3(wav_output_path)
+        return wav_output_path
 
 
     def predict_speaker(self, filename):
@@ -92,9 +92,9 @@ class TextToSpeechService:
         #     print("Tải xong mô hình.")
 
         xtts_config = os.path.join(self.checkpoint_dir, "config.json")
-        config = XttsConfig()
+        config = TortoiseConfig()
         config.load_json(xtts_config)
-        model = Xtts.init_from_config(config)
+        model = Tortoise.init_from_config(config)
         model.load_checkpoint(config, checkpoint_dir=self.checkpoint_dir, use_deepspeed=self.use_deepspeed, eval=True)
 
         if torch.cuda.is_available():
@@ -103,25 +103,11 @@ class TextToSpeechService:
         return model
 
     def _extract_latents(self, speaker_audio_file):
-        global conditioning_latents_cache
-
-        cache_key = (
-            speaker_audio_file,
-            self.model.config.gpt_cond_len,
-            self.model.config.max_ref_len,
-            self.model.config.sound_norm_refs,
+        reference_clips = [audio_utils.load_audio(speaker_audio_file, 24000)]
+        print(reference_clips)
+        gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
+            voice_samples=reference_clips
         )
-
-        if cache_key in conditioning_latents_cache:
-            gpt_cond_latent, speaker_embedding = conditioning_latents_cache[cache_key]
-        else:
-            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
-                audio_path=speaker_audio_file,
-                gpt_cond_len=self.model.config.gpt_cond_len,
-                max_ref_length=self.model.config.max_ref_len,
-                sound_norm_refs=self.model.config.sound_norm_refs,
-            )
-            conditioning_latents_cache[cache_key] = (gpt_cond_latent, speaker_embedding)
 
         return gpt_cond_latent, speaker_embedding
 
@@ -188,3 +174,4 @@ class TextToSpeechService:
         elif num > 1.5:
             return 1.5
         return num
+

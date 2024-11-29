@@ -80,6 +80,11 @@ class Voice:
             "voice": "Giọng 1",
             "audio_file": "uploads/host_q_eco.wav"
         },
+        {
+            "key": "eco_voice_23",
+            "voice": "Giọng 1",
+            "audio_file": "uploads/host_q_eco.wav"
+        },
     ]
 
     @classmethod
