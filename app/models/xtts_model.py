@@ -5,20 +5,23 @@ from TTS.TTS.tts.configs.xtts_config import XttsConfig
 from TTS.TTS.tts.models.xtts import Xtts
 
 CHECKPOINT_DIR = 'model/'
-USE_DEEPSPEED = True
 
-def initialization():
-    print("Loading model...")
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+class XTTSModel:
+    def __init__(self, model_id):
+        self.model_id = model_id
 
-    xtts_config = os.path.join(CHECKPOINT_DIR, "config.json")
-    config = XttsConfig()
-    config.load_json(xtts_config)
-    model = Xtts.init_from_config(config)
-    model.load_checkpoint(config, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=USE_DEEPSPEED, eval=True)
+    def initialization(self, use_deepspeed = False):
+        print("Loading model...")
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-    if torch.cuda.is_available():
-        model.cuda()
+        xtts_config = os.path.join(CHECKPOINT_DIR, "config.json")
+        config = XttsConfig()
+        config.load_json(xtts_config)
+        model = Xtts.init_from_config(config)
+        model.load_checkpoint(config, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=True, eval=True)
 
-    return model
+        if torch.cuda.is_available():
+            model.cuda()
+
+        return model

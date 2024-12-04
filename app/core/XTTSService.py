@@ -11,37 +11,43 @@ from TTS.TTS.tts.models.xtts import Xtts
 from .TextFormatService import normalize_vietnamese_text
 from queue import Queue
 
+from ..models.xtts_model import XTTSModel
+
 CHECKPOINT_DIR = 'model/'
 REPO_ID = "capleaf/viXTTS",
-USE_DEEPSPEED = True
+USE_DEEPSPEED = False
 OUTPUT_DIR = 'storage/outputs'
 XTTS_MODEL = None
 CONDITIONING_LATENTS_CACHE = {}
 
+model_queue = Queue()
 
 def xtts_to_speech(text, speaker_audio_file, speed = 1):
     if not speaker_audio_file:
         return "Bạn cần cung cấp tệp âm thanh tham chiếu!", None
 
     text = normalize_vietnamese_text(text)
-
-    if XTTS_MODEL is None:
-        _load_model()
     gpt_cond_latent, speaker_embedding = _extract_latents(speaker_audio_file)
+    print("process 1")
+    model = model_queue.get()
+    try:
+        wav_chunks = model.inference(
+            text=text,
+            language="vi",
+            gpt_cond_latent=gpt_cond_latent,
+            speaker_embedding=speaker_embedding,
+            temperature=0.3,
+            length_penalty=1.0,
+            repetition_penalty=8.0,
+            top_k=30,
+            top_p=0.85,
+            enable_text_splitting=True,
+            speed=_adjust_number(speed),
+        )
+    finally:
+        torch.cuda.empty_cache()
+        model_queue.put(model)
 
-    wav_chunks = XTTS_MODEL.inference(
-        text=text,
-        language="vi",
-        gpt_cond_latent=gpt_cond_latent,
-        speaker_embedding=speaker_embedding,
-        temperature=0.3,
-        length_penalty=1.0,
-        repetition_penalty=8.0,
-        top_k=30,
-        top_p=0.85,
-        enable_text_splitting=True,
-        speed=_adjust_number(speed),
-    )
 
     out_wav = torch.from_numpy(wav_chunks["wav"]).unsqueeze(0)
     timestamp = int(datetime.now().timestamp() * 1000)
@@ -118,3 +124,9 @@ def _adjust_number(num):
     elif num > 1.5:
         return 1.5
     return num
+
+if XTTS_MODEL is None:
+    _load_model()
+
+    for i in range(1):
+        model_queue.put(XTTSModel(model_id=i).initialization(True))
