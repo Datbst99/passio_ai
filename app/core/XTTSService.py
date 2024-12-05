@@ -117,7 +117,7 @@ def _convert_wav_to_mp3(wav_file_path):
 
 def _adjust_number(num):
     if num is None:
-        return 1.08
+        return 1.05
     elif num < 0.8:
         return 0.8
     elif num > 1.5:
