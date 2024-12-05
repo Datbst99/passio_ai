@@ -66,7 +66,7 @@ def _load_model():
     config = XttsConfig()
     config.load_json(xtts_config)
     model = Xtts.init_from_config(config)
-    model.load_checkpoint(config, vocab_path=TOKENIZER_PATH ,checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=USE_DEEPSPEED, eval=True)
+    model.load_checkpoint(config, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=USE_DEEPSPEED, eval=True)
 
     if torch.cuda.is_available():
         model.cuda()
@@ -117,7 +117,7 @@ def _convert_wav_to_mp3(wav_file_path):
 
 def _adjust_number(num):
     if num is None:
-        return 1.05
+        return 1
     elif num < 0.8:
         return 0.8
     elif num > 1.5:
@@ -127,5 +127,5 @@ def _adjust_number(num):
 if XTTS_MODEL is None:
     _load_model()
 
-    for i in range(3):
-        model_queue.put(XTTSModel(model_id=i).initialization())
+    for i in range(1):
+        model_queue.put(XTTSModel(model_id=i).initialization(use_deepspeed=True))

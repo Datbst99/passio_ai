@@ -20,7 +20,7 @@ class XTTSModel:
         config.load_json(xtts_config)
         model = Xtts.init_from_config(config)
 
-        model.load_checkpoint(config, vocab_path=TOKENIZER_PATH, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=use_deepspeed, eval=True)
+        model.load_checkpoint(config, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=use_deepspeed, eval=True)
 
         if torch.cuda.is_available():
             model.cuda()

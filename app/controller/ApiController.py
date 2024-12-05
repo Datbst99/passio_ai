@@ -50,7 +50,7 @@ class ApiController:
         if file.filename == '':
             return jsonify({"error": "No selected file"}), 400
 
-        if file and file.filename.endswith('.mp3'):
+        if file and (file.filename.endswith('.mp3') or file.filename.endswith('.m4a')):
             voice_key = upload_voice(file, name)
             return jsonify({"message": "File converted successfully", "voice_key": voice_key}), 200
         else:

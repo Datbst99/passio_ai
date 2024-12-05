@@ -70,5 +70,77 @@
     "eco_voice_24": {
         "voice_name": "Giong nu quynh hay ho",
         "audio_file": "storage/audio_samples/sample_1732853537109.wav"
+    },
+    "host_voice_07": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/voice_host_07.wav"
+    },
+    "host_voice_08": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393424447.wav"
+    },
+    "host_voice_09": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393437426.wav"
+    },
+    "host_voice_10": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393446180.wav"
+    },
+    "host_voice_11": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393454665.wav"
+    },
+    "host_voice_12": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393464157.wav"
+    },
+    "host_voice_13": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393472808.wav"
+    },
+    "host_voice_14": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393481539.wav"
+    },
+    "host_voice_15": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393495411.wav"
+    },
+    "host_voice_16": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393504027.wav"
+    },
+    "host_voice_17": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393514925.wav"
+    },
+    "host_voice_23": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393521976.wav"
+    },
+    "host_voice_25": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393534940.wav"
+    },
+    "host_voice_26": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393542701.wav"
+    },
+    "host_voice_29": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393551176.wav"
+    },
+    "host_voice_30": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393562250.wav"
+    },
+    "host_voice_31": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393574156.wav"
+    },
+    "host_voice_38": {
+        "voice_name": "Voice eco host 07",
+        "audio_file": "storage/audio_samples/sample_1733393584399.wav"
     }
 }
