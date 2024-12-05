@@ -2,6 +2,7 @@ import json
 import os.path
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 import ffmpeg
 
@@ -9,7 +10,14 @@ STORAGE = "storage"
 VOICE_FILE_JSON = 'voice.json'
 UPLOAD_FOLDER = 'storage/uploads'
 AUDIO_SAMPLE_FOLDER = 'storage/audio_samples'
+AUDIO_OUTPUT_FOLDER = 'storage/outputs'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+CURRENT_PATH = Path(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_DIR = CURRENT_PATH.parent.parent
+
+def get_voice_storage(file_name):
+    full_path = os.path.join(AUDIO_OUTPUT_FOLDER, file_name)
+    return os.path.join(PROJECT_DIR,full_path) if os.path.isfile(full_path) else None
 
 
 def get_voice_path(voice_key):

@@ -5,7 +5,7 @@ from TTS.TTS.tts.configs.xtts_config import XttsConfig
 from TTS.TTS.tts.models.xtts import Xtts
 
 CHECKPOINT_DIR = 'model/'
-
+TOKENIZER_PATH = 'model/vocab.json'
 class XTTSModel:
     def __init__(self, model_id):
         self.model_id = model_id
@@ -19,7 +19,8 @@ class XTTSModel:
         config = XttsConfig()
         config.load_json(xtts_config)
         model = Xtts.init_from_config(config)
-        model.load_checkpoint(config, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=True, eval=True)
+
+        model.load_checkpoint(config, vocab_path=TOKENIZER_PATH, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=use_deepspeed, eval=True)
 
         if torch.cuda.is_available():
             model.cuda()

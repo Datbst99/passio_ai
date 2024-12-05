@@ -1,3 +1,4 @@
+import hashlib
 import os
 from datetime import datetime
 from pathlib import Path
@@ -19,10 +20,10 @@ USE_DEEPSPEED = False
 OUTPUT_DIR = 'storage/outputs'
 XTTS_MODEL = None
 CONDITIONING_LATENTS_CACHE = {}
-
+TOKENIZER_PATH = 'model/vocab.json'
 model_queue = Queue()
 
-def xtts_to_speech(text, speaker_audio_file, speed = 1):
+def xtts_to_speech(text, file_name, speaker_audio_file, speed = 1):
     if not speaker_audio_file:
         return "Bạn cần cung cấp tệp âm thanh tham chiếu!", None
 
@@ -50,8 +51,7 @@ def xtts_to_speech(text, speaker_audio_file, speed = 1):
 
 
     out_wav = torch.from_numpy(wav_chunks["wav"]).unsqueeze(0)
-    timestamp = int(datetime.now().timestamp() * 1000)
-    wav_output_path = os.path.join(OUTPUT_DIR, f"output_{timestamp}.wav")
+    wav_output_path = os.path.join(OUTPUT_DIR, f"{file_name}.wav")
     torchaudio.save(wav_output_path, out_wav, 24000)
     return _convert_wav_to_mp3(wav_output_path)
 
@@ -66,13 +66,12 @@ def _load_model():
     config = XttsConfig()
     config.load_json(xtts_config)
     model = Xtts.init_from_config(config)
-    model.load_checkpoint(config, checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=USE_DEEPSPEED, eval=True)
+    model.load_checkpoint(config, vocab_path=TOKENIZER_PATH ,checkpoint_dir=CHECKPOINT_DIR, use_deepspeed=USE_DEEPSPEED, eval=True)
 
     if torch.cuda.is_available():
         model.cuda()
 
     XTTS_MODEL = model
-    print("Done loading model...")
 
 def _extract_latents(speaker_audio_file):
     global CONDITIONING_LATENTS_CACHE
@@ -108,7 +107,7 @@ def _convert_wav_to_mp3(wav_file_path):
         format="mp3",
         acodec="libmp3lame",
         strict='normal'
-    ).run()
+    ).run(overwrite_output=True)
 
     delete_file = Path(wav_file_path)
     if delete_file.exists():
@@ -128,5 +127,5 @@ def _adjust_number(num):
 if XTTS_MODEL is None:
     _load_model()
 
-    for i in range(1):
-        model_queue.put(XTTSModel(model_id=i).initialization(True))
+    for i in range(3):
+        model_queue.put(XTTSModel(model_id=i).initialization())
