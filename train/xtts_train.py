@@ -1,14 +1,16 @@
 import os
 
 from trainer import Trainer, TrainerArgs
-
+import torch
 from TTS.TTS.config.shared_configs import BaseDatasetConfig
 from TTS.TTS.tts.datasets import load_tts_samples
 from TTS.TTS.tts.layers.xtts.trainer.gpt_trainer import GPTArgs, GPTTrainer, GPTTrainerConfig, XttsAudioConfig
 from TTS.TTS.utils.manage import ModelManager
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+torch.cuda.empty_cache()
 
 # Logging parameters
-RUN_NAME = "GPT_XTTS_v2.0_LJSpeech_FT"
+RUN_NAME = "GPT_XTTS_VI"
 PROJECT_NAME = "XTTS_trainer"
 DASHBOARD_LOGGER = "tensorboard"
 LOGGER_URI = None
@@ -24,54 +26,49 @@ GRAD_ACUMM_STEPS = 84  # set here the grad accumulation steps
 
 # Define here the dataset that you want to use for the fine-tuning on.
 config_dataset = BaseDatasetConfig(
-    formatter="ljspeech",
-    dataset_name="ljspeech",
-    path="/raid/datasets/LJSpeech-1.1_24khz/",
-    meta_file_train="/raid/datasets/LJSpeech-1.1_24khz/metadata.csv",
-    language="en",
+    formatter="vi_tts",
+    dataset_name="vi_tts",
+    path="dataset",
+    meta_file_train="metadata.csv",
+    language="vi",
 )
 
 # Add here the configs of the datasets
 DATASETS_CONFIG_LIST = [config_dataset]
 
 # Define the path where XTTS v2.0.1 files will be downloaded
-CHECKPOINTS_OUT_PATH = os.path.join(OUT_PATH, "XTTS_v2.0_original_model_files/")
+CHECKPOINTS_OUT_PATH = os.path.join(OUT_PATH, "XTTS_v2.XTTS_model/")
 os.makedirs(CHECKPOINTS_OUT_PATH, exist_ok=True)
 
 
 # DVAE files
-DVAE_CHECKPOINT_LINK = "https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/dvae.pth"
-MEL_NORM_LINK = "https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/mel_stats.pth"
+# DVAE_CHECKPOINT_LINK = "https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/dvae.pth"
+# MEL_NORM_LINK = "https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/mel_stats.pth"
 
 # Set the path to the downloaded files
-DVAE_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(DVAE_CHECKPOINT_LINK))
-MEL_NORM_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(MEL_NORM_LINK))
-
-# download DVAE files if needed
-if not os.path.isfile(DVAE_CHECKPOINT) or not os.path.isfile(MEL_NORM_FILE):
-    print(" > Downloading DVAE files!")
-    ModelManager._download_model_files([MEL_NORM_LINK, DVAE_CHECKPOINT_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True)
+DVAE_CHECKPOINT = "/home/datdv/Desktop/Python/passio_ai/model/dvae.pth"
+MEL_NORM_FILE = "/home/datdv/Desktop/Python/passio_ai/model/mel_stats.pth"
 
 
 # Download XTTS v2.0 checkpoint if needed
-TOKENIZER_FILE_LINK = "https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/vocab.json"
-XTTS_CHECKPOINT_LINK = "https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/model.pth"
+TOKENIZER_FILE_LINK = "/home/datdv/Desktop/Python/passio_ai/model/vocab.json"
+XTTS_CHECKPOINT_LINK = "/home/datdv/Desktop/Python/passio_ai/XTTS_model/model.pth"
 
 # XTTS transfer learning parameters: You we need to provide the paths of XTTS model checkpoint that you want to do the fine tuning.
-TOKENIZER_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(TOKENIZER_FILE_LINK))  # vocab.json file
-XTTS_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_CHECKPOINT_LINK))  # model.pth file
+TOKENIZER_FILE = "/home/datdv/Desktop/Python/passio_ai/model/vocab.json"  # vocab.json file
+XTTS_CHECKPOINT = "/home/datdv/Desktop/Python/passio_ai/model/model.pth"  # model.pth file
 
-# download XTTS v2.0 files if needed
-if not os.path.isfile(TOKENIZER_FILE) or not os.path.isfile(XTTS_CHECKPOINT):
-    print(" > Downloading XTTS v2.0 files!")
-    ModelManager._download_model_files(
-        [TOKENIZER_FILE_LINK, XTTS_CHECKPOINT_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True
-    )
+# # download XTTS v2.0 files if needed
+# if not os.path.isfile(TOKENIZER_FILE) or not os.path.isfile(XTTS_CHECKPOINT):
+#     print(" > Downloading XTTS v2.0 files!")
+#     ModelManager._download_model_files(
+#         [TOKENIZER_FILE_LINK, XTTS_CHECKPOINT_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True
+#     )
 
 
 # Training sentences generations
 SPEAKER_REFERENCE = [
-    "./tests/data/ljspeech/wavs/LJ001-0002.wav"  # speaker reference to be used in training test sentences
+    "/home/datdv/Desktop/Python/passio_ai/model/vi_sample.wav"  # speaker reference to be used in training test sentences
 ]
 LANGUAGE = config_dataset.language
 
