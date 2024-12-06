@@ -127,5 +127,5 @@ def _adjust_number(num):
 if XTTS_MODEL is None:
     _load_model()
 
-    for i in range(1):
-        model_queue.put(XTTSModel(model_id=i).initialization(use_deepspeed=True))
+    for i in range(5):
+        model_queue.put(XTTSModel(model_id=i).initialization(use_deepspeed=False))
