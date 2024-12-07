@@ -87,10 +87,7 @@ def _extract_latents(speaker_audio_file):
         gpt_cond_latent, speaker_embedding = CONDITIONING_LATENTS_CACHE[cache_key]
     else:
         gpt_cond_latent, speaker_embedding = XTTS_MODEL.get_conditioning_latents(
-            audio_path=speaker_audio_file,
-            gpt_cond_len=XTTS_MODEL.config.gpt_cond_len,
-            max_ref_length=XTTS_MODEL.config.max_ref_len,
-            sound_norm_refs=XTTS_MODEL.config.sound_norm_refs,
+            audio_path=speaker_audio_file
         )
         CONDITIONING_LATENTS_CACHE[cache_key] = (gpt_cond_latent, speaker_embedding)
 
@@ -99,14 +96,15 @@ def _extract_latents(speaker_audio_file):
 def _convert_wav_to_mp3(wav_file_path):
     mp3_file_path = wav_file_path.replace(".wav", ".mp3")
 
-    ffmpeg.input(wav_file_path).output(
+    ffmpeg.input(wav_file_path, hwaccel="cuda").output(
         mp3_file_path,
         ar=44100,  # Sampling rate 44.1 kHz
         ac=1,
         ab="128k",
         format="mp3",
         acodec="libmp3lame",
-        strict='normal'
+        strict='strict',
+        af = "atempo=1.3"
     ).run(overwrite_output=True)
 
     delete_file = Path(wav_file_path)
